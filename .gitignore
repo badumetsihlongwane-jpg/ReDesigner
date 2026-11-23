@@ -1,0 +1,21 @@
+# OS & editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Packaging & local artifacts
+dist/
+*.zip
+*.crx
+*.pem
+
+# Dependencies & logs (project is zero-dependency)
+node_modules/
+npm-debug.log*
+
+# Local environment / secrets
+.env
+.env.*

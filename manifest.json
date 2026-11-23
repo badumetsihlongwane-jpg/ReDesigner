@@ -1,29 +1,40 @@
 {
   "manifest_version": 3,
-  "name": "ReDesigner — Autonomous Website Redesigner",
-  "version": "1.0.0",
-  "description": "Examines live DOM, maps semantic structure, and dynamically redesigns websites with AI-directed styles.",
+  "name": "ReDesigner — Structural UI/UX Studio",
+  "version": "3.3.0",
+  "description": "Personalize the web with structural layout transformations, portable design tokens, and a closed-loop QA AI agent.",
+  "homepage_url": "https://github.com/badumetsihlongwane-jpg/ReDesigner",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "tabs",
+    "sidePanel"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Website ReDesigner"
+    "default_title": "Open ReDesigner Studio",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "popup.html"
   },
   "background": {
-    "service_worker": "src/background/service-worker.ts",
+    "service_worker": "service-worker.js",
     "type": "module"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["src/content/content-script.ts"],
-      "run_at": "document_idle"
-    }
-  ]
+  }
 }
