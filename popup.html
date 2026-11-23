@@ -1,12 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Website ReDesigner</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/popup/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReDesigner Studio</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup">
+    <header>
+      <div class="mark"><img src="icons/icon-48.png" alt="ReDesigner" width="34" height="34" /></div>
+      <div class="header-text">
+        <p class="eyebrow">Personal Web Studio</p>
+        <h1>ReDesigner <span class="version-pill">v3.3</span></h1>
+      </div>
+      <button type="button" id="btn-toggle-settings" class="icon-pill" title="AI Provider & API Settings">⚙ AI Setup</button>
+    </header>
+
+    <div id="unsupported-banner" class="notice-banner hidden" role="status">
+      Open any standard website (<code>http://</code> or <code>https://</code>) to redesign it.
+    </div>
+
+    <!-- Collapsible AI Settings Drawer -->
+    <section id="settings-drawer" class="settings-drawer hidden">
+      <div class="field-row">
+        <div class="field" style="flex: 1.2;">
+          <span>AI Provider</span>
+          <select id="provider-select"></select>
+        </div>
+        <div class="field" style="flex: 1;">
+          <span>Agent Mode</span>
+          <select id="agent-mode-select">
+            <option value="react" selected>Workspace Agent</option>
+            <option value="pipeline">Fast 2-Pass</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field hidden" id="custom-url-field">
+        <span>OpenAI-Compatible Base URL</span>
+        <input type="url" id="custom-base-url" placeholder="http://localhost:11434/v1/chat/completions" />
+      </div>
+
+      <div class="field" id="api-key-field">
+        <span id="api-key-label">API Key</span>
+        <input type="password" id="api-key" placeholder="AIzaSy..." />
+      </div>
+
+      <div class="field">
+        <div class="field-header">
+          <span>Model</span>
+          <button type="button" id="btn-fetch-models" class="fetch-btn">↻ Fetch Models</button>
+        </div>
+        <select id="model-select"></select>
+        <input type="text" id="custom-model-input" placeholder="Or type custom model ID..." style="margin-top: 6px; font-size: 11px;" />
+      </div>
+      <p class="privacy-note">Keys stay local in Chrome storage and are sent only to your chosen provider. Or skip setup and use <strong>⚡ Quick</strong> offline.</p>
+    </section>
+
+    <!-- Layer 1: Personal Visual Profile (Instant 0-AI Swap) -->
+    <div class="field">
+      <span>1. Your Visual Theme (Instant Swap)</span>
+      <div class="profile-pills" id="profile-pills"></div>
+    </div>
+
+    <!-- Layer 2: Structural Layout Archetype -->
+    <div class="field">
+      <span>2. Layout Transformation</span>
+      <select id="layout-preset-select">
+        <option value="auto">✦ Auto Architect (Best Structural Layout)</option>
+        <option value="bento-command">Top Command Bar + Bento Grid</option>
+        <option value="editorial-focus">Zen Editorial Reader (No Sidebars)</option>
+        <option value="app-workspace">Split App Workspace (Sticky Rail)</option>
+        <option value="media-cards">Visual Card Grid (Rebuild List Items)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <textarea id="user-prompt" rows="2" placeholder="Leave blank for autonomous redesign, describe any look, or enter polish instructions for ✨ Refine..."></textarea>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="btn-run" class="primary">✦ AI Redesign</button>
+      <button type="button" id="btn-refine" class="secondary hidden" title="Iterate and polish the current redesign without starting over">✨ Refine</button>
+      <button type="button" id="btn-stop" class="primary hidden" style="background: var(--rd-danger); color: #ffffff;">■ Stop</button>
+      <button type="button" id="btn-quick-apply" class="secondary" title="Instant structural + theme transform with 0 AI calls">⚡ Quick</button>
+    </div>
+
+    <div class="actions" style="margin-top: 6px;">
+      <button type="button" id="btn-compare" class="quiet" style="flex: 1;">Compare</button>
+      <button type="button" id="btn-revert" class="quiet" style="flex: 1;">Revert</button>
+    </div>
+
+    <!-- Layer 3: Live Ergonomic Controls (0 AI calls, <5ms) -->
+    <details class="tweaks-drawer" open>
+      <summary>3. Live Ergonomics (Instant Tweaks)</summary>
+      <div class="tweaks-grid">
+        <label class="tweak-item">
+          <span>Width <strong id="tweak-measure-val">74ch</strong></span>
+          <input type="range" id="tweak-measure" min="52" max="115" value="74" />
+        </label>
+        <label class="tweak-item">
+          <span>Text Scale <strong id="tweak-font-val">1.00×</strong></span>
+          <input type="range" id="tweak-font-scale" min="0.85" max="1.3" step="0.05" value="1" />
+        </label>
+        <label class="tweak-item">
+          <span>Radius <strong id="tweak-radius-val">10px</strong></span>
+          <input type="range" id="tweak-radius" min="0" max="20" value="10" />
+        </label>
+        <label class="tweak-item">
+          <span>Card Columns</span>
+          <select id="tweak-card-cols">
+            <option value="0">Auto</option>
+            <option value="1">1 Col (Feed)</option>
+            <option value="2">2 Cols</option>
+            <option value="3">3 Cols</option>
+          </select>
+        </label>
+      </div>
+      <div class="tweak-footer">
+        <label class="tweak-toggle">
+          <input type="checkbox" id="tweak-hide-sidebars" />
+          <span>Hide &amp; Disable Sidebars (<code>inert</code>)</span>
+        </label>
+        <button type="button" id="btn-reset-tweaks" class="mini-btn" title="Reset sliders to defaults">Reset</button>
+      </div>
+    </details>
+
+    <!-- Cockpit -->
+    <div class="cockpit-container">
+      <div class="cockpit-header">
+        <span>Agent Pipeline &amp; Plan</span>
+        <div class="cockpit-meta">
+          <button type="button" id="cockpit-qa-pill" class="qa-pill hidden" title="Click to re-run 10-point live page QA audit">QA --</button>
+          <span id="cockpit-timer">00:00</span>
+        </div>
+      </div>
+
+      <div class="checklist" id="checklist">
+        <div class="check-item pending" id="step-1">
+          <div class="check-icon">1</div>
+          <div class="check-content">
+            <div class="check-title">Layout &amp; Slot Scanner</div>
+            <div class="check-desc">Catalog HTML tree, tokens, SPA &amp; spatial map</div>
+          </div>
+        </div>
+        <div class="check-item pending" id="step-2">
+          <div class="check-icon">2</div>
+          <div class="check-content">
+            <div class="check-title">Structural UI Architect</div>
+            <div class="check-desc">Synthesize validated DOM surgery + layout CSS</div>
+          </div>
+        </div>
+        <div class="check-item pending" id="step-3">
+          <div class="check-icon">3</div>
+          <div class="check-content">
+            <div class="check-title">Auto-Audit &amp; Screenshot QA</div>
+            <div class="check-desc">Check overlaps, occlusion, overflow &amp; contrast</div>
+          </div>
+        </div>
+        <div class="check-item pending" id="step-4">
+          <div class="check-icon">4</div>
+          <div class="check-content">
+            <div class="check-title">Self-Heal &amp; Regression Guard</div>
+            <div class="check-desc">Fix detected layout/contrast defects</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="logs-header">
+        <span>Logs</span>
+        <div class="log-actions">
+          <button type="button" id="btn-toggle-designs" class="log-clear-btn">✦ Designs (<span id="designs-count">0</span>)</button>
+          <button type="button" id="btn-toggle-css" class="log-clear-btn">{ } Code</button>
+          <button type="button" id="btn-clear-logs" class="log-clear-btn">Clear</button>
+        </div>
+      </div>
+      <div class="terminal-logs" id="terminal-logs">
+        <div class="log-entry system">[Ready] Pick a layout &amp; theme to personalize this page.</div>
+      </div>
+
+      <!-- Saved Designs Gallery -->
+      <div class="designs-drawer" id="designs-drawer">
+        <div class="designs-drawer-header">
+          <div class="designs-tabs">
+            <button type="button" class="drawer-tab active" data-tab="all">All</button>
+            <button type="button" class="drawer-tab" data-tab="liked">♥ Liked</button>
+            <button type="button" class="drawer-tab" data-tab="site">This Site</button>
+          </div>
+          <button type="button" id="btn-pin-site" class="pin-toggle-btn">📌 Pin: OFF</button>
+        </div>
+        <div class="saved-designs-list" id="saved-designs-list"></div>
+      </div>
+
+      <!-- Dual CSS & DOM Mutations Inspector -->
+      <div class="css-inspector hidden" id="css-inspector">
+        <div class="css-inspector-header">
+          <div class="designs-tabs">
+            <button type="button" class="drawer-tab active" id="tab-code-css">styles.css</button>
+            <button type="button" class="drawer-tab" id="tab-code-mutations">mutations.json</button>
+          </div>
+          <div class="css-inspector-actions">
+            <button type="button" id="btn-like-current" class="mini-btn">♡ Like</button>
+            <button type="button" id="btn-apply-css" class="mini-btn">Apply</button>
+            <button type="button" id="btn-import-recipe" class="mini-btn" title="Import JSON recipe file">Import</button>
+            <button type="button" id="btn-export-recipe" class="mini-btn" title="Copy portable JSON recipe">Export</button>
+            <button type="button" id="btn-copy-css" class="mini-btn">Copy</button>
+            <input type="file" id="recipe-file-input" accept=".json,application/json" class="hidden" />
+          </div>
+        </div>
+        <span id="css-direction-label" class="design-sub" style="display:block;margin-bottom:4px;">Adapter Code</span>
+        <textarea id="css-editor" rows="5" spellcheck="false" placeholder="/* Synthesized layout CSS... */"></textarea>
+        <textarea id="mutations-editor" class="hidden" rows="5" spellcheck="false" placeholder="[]"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
 </html>
